@@ -80,7 +80,7 @@ dst = np.float32(
     [(img_size[0] * 3 / 4), img_size[1]],
     [(img_size[0] * 3 / 4), 0]])
 ```
-
+Note that stretching the rectangle too further away will generate warped image in which lane lines near the top look blurred and not straight enough. Visually this can be metigated by plotting the image in narrow and tall figure size like `figsize=9, 16` 
 This resulted in the following source and destination points:
 
 | Source        | Destination   | 
