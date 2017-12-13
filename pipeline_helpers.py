@@ -160,7 +160,7 @@ def combine_color(img_bgr, rgb_thresh=(220, 255), hls_thresh=(90, 255)):
   combined = np.zeros_like(img_r)
   combined[((binary_s == 1) & (binary_l == 1)) | (binary_r == 1)] = 1
 
-  return combined, binary_s, binary_l
+  return combined
 
 # I didn't use window_mask method in my pipeline, skip reading it if you want
 # window_mask is used to draw green windows on the lane lines in the image
