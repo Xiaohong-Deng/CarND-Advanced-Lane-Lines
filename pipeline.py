@@ -104,6 +104,8 @@ def get_perspective_mat(camMat, distCoeffs):
 
   matP_inv : matrix used to transform images from bird eye's view to original
   """
+  # either we load the matrices that can be used to transform images to bird eye's
+  # view perspective or we generate such matrices from a straight line image
   try:
     with open('perspective_params.p', mode='rb') as f:
       perspective_params = pickle.load(f)
@@ -356,6 +358,7 @@ def update_line(line, fitx, fit):
   line.detected = True
   num_tracked_lines = len(line.recent_xfitted)
 
+  # I choose to track up to 10 latest frames
   if num_tracked_lines == 10:
     line.recent_xfitted.pop(0)
   line.recent_xfitted.append(fitx)
@@ -373,6 +376,9 @@ def update_line(line, fitx, fit):
   line.diffs = fit - line.current_fit
   line.current_fit = fit
 
+# In order to make my pipeline function compatible with `moviepy` functions
+# I wrapped up image processing pipeline in another function.
+# This is called closure. It is also how currying is done in Python.
 def process_frames(is_bgr=True, left_line=None, right_line=None):
   """
   Return a pipeline function that can process a single image
@@ -385,6 +391,10 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
               detected left lines in the last n frames
   right_line : the Line() instance used to keep track of the information of the
               detected right lines in the last n frames
+
+  Output
+  -----
+  process_image : a function that takes an BGR or RGB image as its argument
   """
   if left_line is None:
     left_line = Line()
@@ -392,6 +402,13 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
     right_line = Line()
 
   def process_image(img):
+    """
+    Return the original image with the lane colored in green
+
+    Input
+    -----
+    img : an RGB or BGR image
+    """
     # STEP1: Camera Calibration
     # we have many chessboard images from the same camera
     # we use all of them to calibrate the camera
@@ -400,12 +417,9 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
     img, img_bgr, img_gray = get_all_imgs(img, is_bgr)
     undist = cv2.undistort(img, camMat, distCoeffs, None, camMat)
     # STEP2: retrieve a grayscale image only contains lane lines
-    # STEP2-a: get the best lane lines captured image we can with gradients
     combined = get_bin_lane_line_img(img_gray, img_bgr)
 
     # STEP3: let us warp the image to bird's eyes view perspective
-    # STEP3-a: either we load the matrices that can be used to transform images to bird eye's
-    # view perspective or we generate such matrices from a straight line image
     img_size = (undist.shape[1], undist.shape[0])
     warped = cv2.warpPerspective(combined, matP, (img_size[0], img_size[1]))
 
@@ -420,6 +434,7 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
     leftx, lefty, rightx, righty = ph.find_lane_line_pixels(warped, window_width, window_height, margin)
 
     ploty = np.linspace(0, warped.shape[0]-1, warped.shape[0])
+    # compute curvature of the lane
     left_curverad, right_curverad = get_cuvature(leftx, lefty, rightx, righty, ploty)
     curverad = (left_curverad + right_curverad) / 2
 
@@ -428,19 +443,21 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
     right_fit = np.polyfit(righty, rightx, 2)
 
     # Generate x and y values for plotting
-
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
     update_line(left_line, left_fitx, left_fit)
     update_line(right_line, right_fitx, right_fit)
 
+    # uncommet the following code to generate warped image with lane line pixels colored
+    # red and blue. Also each line will be covered by a green polygon with certain width
     # out_img = np.dstack((warped, warped, warped))*255
     # out_img = color_warped_lane_lines(out_img, leftx, lefty, rightx, righty)
     # lane_line_bounded = get_lane_line_bounded_image(out_img, left_fitx, right_fitx, ploty, margin)
 
     # colored_lane_line_bounded = cv2.addWeighted(out_img, 1, lane_line_bounded, 0.3, 0)
 
+    # compute car offset
     car_offset = get_car_offset(combined, matP, img_size, left_fitx[-1], right_fitx[-1], xm_per_pix)
 
     colored_lane = color_unwarped_lane(warped, img_size, left_line.bestx, right_line.bestx, ploty, matP_inv)

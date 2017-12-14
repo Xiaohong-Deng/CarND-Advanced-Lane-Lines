@@ -99,6 +99,9 @@ def dir_thresh(gray, sobel_kernel=3, thresh=(0, np.pi/2)):
   binary_output[(abs_grad_dir >= thresh[0]) & (abs_grad_dir <= thresh[1])] = 1
   return binary_output
 
+# I implemented the function used to do thresholding gradients but decided not to use it.
+# Because a forum mentor said it was terrible with shadows.
+# The final output video is the one generated without gradients. Looks fine.
 def combine_grad(gray, ksize=3, grad_thresh=(20, 100), magnitude_thresh=(30, 100), direction_thresh=(0.7, 1.57)):
   """
   Compute binary grayscaled image that captures the lane lines
