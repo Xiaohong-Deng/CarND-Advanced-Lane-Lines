@@ -88,7 +88,7 @@ def get_all_imgs(img, is_bgr):
 
   return img, img_bgr, img_gray
 
-def get_perspective_mat(camMat, distCoeffs):
+def get_perspective_mat(camMat, distCoeffs, img_size):
   """
   Return matrices used to transform images between different perspectives
 
@@ -412,15 +412,15 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
     # STEP1: Camera Calibration
     # we have many chessboard images from the same camera
     # we use all of them to calibrate the camera
-    ret, camMat, distCoeffs, rvecs, tvecs = get_undist_params()
-    matP, matP_inv = get_perspective_mat(camMat, distCoeffs)
     img, img_bgr, img_gray = get_all_imgs(img, is_bgr)
+    img_size = (img.shape[1], img.shape[0])
+    ret, camMat, distCoeffs, rvecs, tvecs = get_undist_params()
+    matP, matP_inv = get_perspective_mat(camMat, distCoeffs, img_size)
     undist = cv2.undistort(img, camMat, distCoeffs, None, camMat)
     # STEP2: retrieve a grayscale image only contains lane lines
     combined = get_bin_lane_line_img(img_gray, img_bgr)
 
     # STEP3: let us warp the image to bird's eyes view perspective
-    img_size = (undist.shape[1], undist.shape[0])
     warped = cv2.warpPerspective(combined, matP, (img_size[0], img_size[1]))
 
     # window settings
@@ -468,7 +468,7 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
 
   return process_image
 
-if name == '__main__':
+if __name__ == '__main__':
   clip1 = VideoFileClip("./project_video.mp4")
 
   left_line = Line()
