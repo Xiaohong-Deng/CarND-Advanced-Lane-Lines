@@ -7,6 +7,7 @@ import cv2
 import imageio
 from moviepy.editor import VideoFileClip
 
+
 # Define a class to receive the characteristics of each line detection
 class Line():
   def __init__(self):
@@ -14,22 +15,23 @@ class Line():
     self.detected = False
     # x values of the last n fits of the line
     self.recent_xfitted = []
-    #average x values of the fitted line over the last n iterations
+    # average x values of the fitted line over the last n iterations
     self.bestx = None
-    #polynomial coefficients averaged over the last n iterations
+    # polynomial coefficients averaged over the last n iterations
     self.best_fit = None
-    #polynomial coefficients for the most recent fit
+    # polynomial coefficients for the most recent fit
     self.current_fit = [np.array([False])]
-    #radius of curvature of the line in some units
+    # radius of curvature of the line in some units
     self.radius_of_curvature = None
-    #distance in meters of vehicle center from the line
+    # distance in meters of vehicle center from the line
     self.line_base_pos = None
-    #difference in fit coefficients between last and new fits
-    self.diffs = np.array([0,0,0], dtype='float')
-    #x values for detected line pixels
+    # difference in fit coefficients between last and new fits
+    self.diffs = np.array([0, 0, 0], dtype='float')
+    # x values for detected line pixels
     self.allx = None
-    #y values for detected line pixels
+    # y values for detected line pixels
     self.ally = None
+
 
 # load the undistort parameters for future use, or run the method to generate
 # and save them
@@ -53,12 +55,13 @@ def get_undist_params():
     undist_params = {}
     ret, camMat, distCoeffs, rvecs, tvecs = ph.get_undist_params()
     undist_params['ret'], undist_params['camMat'], undist_params['distCoeffs'], \
-    undist_params['rvecs'], undist_params['tvecs'] = ret, camMat, distCoeffs, rvecs, tvecs
+        undist_params['rvecs'], undist_params['tvecs'] = ret, camMat, distCoeffs, rvecs, tvecs
 
     with open('undist_params.p', mode='wb') as f:
       pickle.dump(undist_params, f)
 
   return ret, camMat, distCoeffs, rvecs, tvecs
+
 
 # load and preprocess the image
 def get_all_imgs(img, is_bgr):
@@ -87,6 +90,7 @@ def get_all_imgs(img, is_bgr):
   img_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
 
   return img, img_bgr, img_gray
+
 
 def get_perspective_mat(camMat, distCoeffs, img_size):
   """
@@ -144,6 +148,7 @@ def get_perspective_mat(camMat, distCoeffs, img_size):
 
   return matP, matP_inv
 
+
 def get_bin_lane_line_img(img_gray, img_bgr):
   """
   Get the best lane lines captured image we can with color space
@@ -162,15 +167,17 @@ def get_bin_lane_line_img(img_gray, img_bgr):
 
   return combined_color
 
+
 def color_warped_lane_lines(warped, leftx, lefty, rightx, righty):
   """
   For the warped image, set pixels that form the left line in red, pixels that
   form the right line in blue
   """
-  warped[lefty, leftx] = [255, 0, 0] # left line in red
-  warped[righty, rightx] = [0, 0, 255] # right line in blue
+  warped[lefty, leftx] = [255, 0, 0]  # left line in red
+  warped[righty, rightx] = [0, 0, 255]  # right line in blue
 
   return warped
+
 
 def get_lane_line_bounded_image(warped, left_fitx, right_fitx, ploty, margin):
   """
@@ -194,25 +201,26 @@ def get_lane_line_bounded_image(warped, left_fitx, right_fitx, ploty, margin):
   # vstack is vertical stack, more rows
   # transpose gives you pairs of pixel coordinates, (x, y), it gives you left lane line
   # left boundary from top to bottom
-  left_line_window1 = np.array([np.transpose(np.vstack([left_fitx-margin, ploty]))])
+  left_line_window1 = np.array([np.transpose(np.vstack([left_fitx - margin, ploty]))])
   # it gives you left lane line right boundary from bottom to top, by flipping upside down
-  left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx+margin,
+  left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx + margin,
                                 ploty])))])
 
   # (left_x, y, right_x, y), y is the same, so it gives you the smooth boundaries of lane lines
   # left_line_window1 and left_line_window2 are of the shape(1, 720, 2)
   # horizontal stack is stacking the 2nd dimension, (1, 1440, 2)
   left_line_pts = np.hstack((left_line_window1, left_line_window2))
-  right_line_window1 = np.array([np.transpose(np.vstack([right_fitx-margin, ploty]))])
-  right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx+margin,
+  right_line_window1 = np.array([np.transpose(np.vstack([right_fitx - margin, ploty]))])
+  right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx + margin,
                                 ploty])))])
   right_line_pts = np.hstack((right_line_window1, right_line_window2))
 
   # Draw the lane onto the warped blank image
-  cv2.fillPoly(window_img, np.int_([left_line_pts]), (0,255, 0))
-  cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
+  cv2.fillPoly(window_img, np.int_([left_line_pts]), (0, 255, 0))
+  cv2.fillPoly(window_img, np.int_([right_line_pts]), (0, 255, 0))
 
   return window_img
+
 
 def get_cuvature(leftx, lefty, rightx, righty, ploty):
   """
@@ -237,19 +245,20 @@ def get_cuvature(leftx, lefty, rightx, righty, ploty):
   right_curverad : Radius of curvature measured in meters for right lane line.
                   It is measured at the bottom of the image
   """
-  ym_per_pix = 30/720 # meters per pixel in y dimension
-  xm_per_pix = 3.7/700 # meters per pixel in x dimension
+  ym_per_pix = 30 / 720  # meters per pixel in y dimension
+  xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
 
   y_eval = np.max(ploty)
 
   # Fit new polynomials to x,y in world space
-  left_fit_cr = np.polyfit(lefty*ym_per_pix, leftx*xm_per_pix, 2)
-  right_fit_cr = np.polyfit(righty*ym_per_pix, rightx*xm_per_pix, 2)
+  left_fit_cr = np.polyfit(lefty * ym_per_pix, leftx * xm_per_pix, 2)
+  right_fit_cr = np.polyfit(righty * ym_per_pix, rightx * xm_per_pix, 2)
   # Calculate the new radii of curvature
-  left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
-  right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+  left_curverad = ((1 + (2 * left_fit_cr[0] * y_eval * ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2 * left_fit_cr[0])
+  right_curverad = ((1 + (2 * right_fit_cr[0] * y_eval * ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2 * right_fit_cr[0])
 
   return left_curverad, right_curverad
+
 
 def get_car_offset(combined, matP, img_size, bottom_left_fitx, bottom_right_fitx, xm_per_pix):
   """
@@ -288,6 +297,7 @@ def get_car_offset(combined, matP, img_size, bottom_left_fitx, bottom_right_fitx
 
   return car_offset_meters
 
+
 def color_unwarped_lane(warped, img_size, left_fitx, right_fitx, ploty, matP_inv):
   """
   Return an image in the unwarped perspective with lane colored in green
@@ -317,12 +327,13 @@ def color_unwarped_lane(warped, img_size, left_fitx, right_fitx, ploty, matP_inv
   pts = np.hstack((pts_left, pts_right))
 
   # Draw the lane onto the warped blank image
-  cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
+  cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
 
   # Warp the blank back to original image space using inverse perspective matrix (Minv)
   newwarp = cv2.warpPerspective(color_warp, matP_inv, (img_size[0], img_size[1]))
 
   return newwarp
+
 
 def paste_curvature_and_offset(image, curverad, offset):
   """
@@ -337,8 +348,8 @@ def paste_curvature_and_offset(image, curverad, offset):
   offset : measurement in meters on how much car center is off the lane center
   """
   font = cv2.FONT_HERSHEY_SIMPLEX
-  image = cv2.putText(image,"lane curvature: " + str(curverad) + " meters", (20,40), font, 1, (255,255,255), 2, cv2.LINE_AA)
-  image = cv2.putText(image,"car offset: " + str(offset) + " meters" , (20,120), font, 1, (255,255,255), 2, cv2.LINE_AA)
+  image = cv2.putText(image, "lane curvature: " + str(curverad) + " meters", (20, 40), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+  image = cv2.putText(image, "car offset: " + str(offset) + " meters", (20, 120), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
   return image
 
@@ -375,6 +386,7 @@ def update_line(line, fitx, fit):
 
   line.diffs = fit - line.current_fit
   line.current_fit = fit
+
 
 # In order to make my pipeline function compatible with `moviepy` functions
 # I wrapped up image processing pipeline in another function.
@@ -426,14 +438,14 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
     # window settings
     # this is the window_width used to do convolution
     window_width = 50
-    window_height = 180 # Break image into 9 vertical layers since image height is 720
-    margin = 100 # How much to slide left and right for searching
-    xm_per_pix = 3.7/700
+    window_height = 180  # Break image into 9 vertical layers since image height is 720
+    margin = 100  # How much to slide left and right for searching
+    xm_per_pix = 3.7 / 700
 
     # find the lane lines centers in the bird eye's perspective
     leftx, lefty, rightx, righty = ph.find_lane_line_pixels(warped, window_width, window_height, margin)
 
-    ploty = np.linspace(0, warped.shape[0]-1, warped.shape[0])
+    ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
     # compute curvature of the lane
     left_curverad, right_curverad = get_cuvature(leftx, lefty, rightx, righty, ploty)
     curverad = (left_curverad + right_curverad) / 2
@@ -443,8 +455,8 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
     right_fit = np.polyfit(righty, rightx, 2)
 
     # Generate x and y values for plotting
-    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+    left_fitx = left_fit[0] * ploty**2 + left_fit[1] * ploty + left_fit[2]
+    right_fitx = right_fit[0] * ploty**2 + right_fit[1] * ploty + right_fit[2]
 
     update_line(left_line, left_fitx, left_fit)
     update_line(right_line, right_fitx, right_fit)
@@ -467,6 +479,7 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
     return colored_lane_img
 
   return process_image
+
 
 if __name__ == '__main__':
   clip1 = VideoFileClip("./project_video.mp4")
