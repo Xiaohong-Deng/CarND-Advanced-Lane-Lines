@@ -25,6 +25,8 @@ The goals / steps of this project are the following:
 
 ## Something I'd like you to know before reading my code
 
+- There is another branch called **bumpy** where I fixed the lane detection being slightly off the lane when road is bumpy, to some extent. But that version is less robust to shadows than the master branch. That's the difference between applying moving average which is a filter to the recent fit or not.
+
 - I refactored the Python script so it can be used to process videos and generate resulting videos only. All the code used to generate intermediate images were either removed or commented out to increase code readability.
 
 - In order to make my pipeline function compatible with `moviepy` functions I wrapped up image processing pipeline in another function. This is called closure. It is also how currying is done in Python.
@@ -52,7 +54,7 @@ The code for this step is contained in the function named `get_undist_params()` 
 
 I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
 
-I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
+I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result:
 
 ![alt text][image1]
 
@@ -111,9 +113,9 @@ dst = np.float32([[offset_x, offset_y], [img_size[0] - offset_x - 1, offset_y],
 
 This resulted in the following source and destination points:
 
-| Source        | Destination   | 
-|:-------------:|:-------------:| 
-| 579, 463      | 301, 0        | 
+| Source        | Destination   |
+|:-------------:|:-------------:|
+| 579, 463      | 301, 0        |
 | 213, 720      | 301, 720      |
 | 1094, 720     | 980, 720      |
 | 705, 463      | 980, 0        |
@@ -126,7 +128,7 @@ warped = cv2.warpPerspective(combined, matP, (img_size[0], img_size[1]))
 ```
 we get the warped image
 
-Note that stretching the rectangle too further away will generate warped image in which lane lines near the top look blurred and not straight enough. Visually this can be metigated by plotting the image in narrow and tall figure size like `figsize=9, 16` 
+Note that stretching the rectangle too further away will generate warped image in which lane lines near the top look blurred and not straight enough. Visually this can be metigated by plotting the image in narrow and tall figure size like `figsize=9, 16`
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
