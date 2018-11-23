@@ -1,10 +1,10 @@
 import pickle
-import matplotlib.pyplot as plt
-import PIL
+# import matplotlib.pyplot as plt
+# import PIL
 import pipeline_helpers as ph
 import numpy as np
 import cv2
-import imageio
+# import imageio
 from moviepy.editor import VideoFileClip
 
 
@@ -374,18 +374,24 @@ def update_line(line, fitx, fit):
     line.recent_xfitted.pop(0)
   line.recent_xfitted.append(fitx)
 
-  line.bestx = np.mean(line.recent_xfitted, axis=0)
-
-  if line.best_fit is None:
-    line.best_fit = fit
+  meanx = np.mean(line.recent_xfitted, axis=0)
+  mean_varx = np.mean(np.var(line.recent_xfitted, axis=0))
+  mean_var_fitx = np.mean((fitx - meanx) ** 2)
+  if mean_var_fitx > mean_varx:
+    line.bestx = fitx
   else:
-    if num_tracked_lines == 10:
-      line.best_fit = (line.best_fit * num_tracked_lines + fit) / num_tracked_lines
-    else:
-      line.best_fit = (line.best_fit * num_tracked_lines + fit) / (num_tracked_lines + 1)
+    line.bestx = np.mean(line.recent_xfitted, axis=0)
 
-  line.diffs = fit - line.current_fit
-  line.current_fit = fit
+  # if line.best_fit is None:
+  #   line.best_fit = fit
+  # else:
+  #   if num_tracked_lines == 10:
+  #     line.best_fit = (line.best_fit * num_tracked_lines + fit) / num_tracked_lines
+  #   else:
+  #     line.best_fit = (line.best_fit * num_tracked_lines + fit) / (num_tracked_lines + 1)
+  #
+  # line.diffs = fit - line.current_fit
+  # line.current_fit = fit
 
 
 # In order to make my pipeline function compatible with `moviepy` functions
@@ -438,7 +444,7 @@ def process_frames(is_bgr=True, left_line=None, right_line=None):
     # window settings
     # this is the window_width used to do convolution
     window_width = 50
-    window_height = 180  # Break image into 9 vertical layers since image height is 720
+    window_height = 180  # Break image into 4 vertical layers since image height is 720
     margin = 100  # How much to slide left and right for searching
     xm_per_pix = 3.7 / 700
 
@@ -487,4 +493,4 @@ if __name__ == '__main__':
   left_line = Line()
   right_line = Line()
   result = clip1.fl_image(process_frames(is_bgr=False, left_line=left_line, right_line=right_line))
-  result.write_videofile('./detected_project_video.mp4', audio=False)
+  result.write_videofile('./nonfiltered_detected_project_video.mp4', audio=False)
